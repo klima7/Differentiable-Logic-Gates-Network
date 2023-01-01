@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 
 class Fun(ABC):
 
@@ -9,7 +11,7 @@ class Fun(ABC):
     def boolean(self, a, b):
         value = self._boolean(a, b)
         if self.neg:
-            value = not value
+            value = ~value
         return value
 
     def real(self, a, b):
@@ -40,55 +42,55 @@ class Fun(ABC):
 class TrueFun(Fun):
 
     def _boolean(self, a, b):
-        return True
+        return np.ones_like(a)
 
     def _real(self, a, b):
-        return 1
+        return np.ones_like(a)
 
     def _deriv(self, a, b):
-        return 0, 0
+        return np.zeros_like(a), np.zeros_like(a)
 
 
 class AFun(Fun):
 
     def _boolean(self, a, b):
-        return a
+        return np.array(a)
 
     def _real(self, a, b):
-        return a
+        return np.array(a)
 
     def _deriv(self, a, b):
-        return 1, 0
+        return np.ones_like(a), np.zeros_like(a)
 
 
 class BFun(Fun):
 
     def _boolean(self, a, b):
-        return b
+        return np.array(b)
 
     def _real(self, a, b):
-        return b
+        return np.array(b)
 
     def _deriv(self, a, b):
-        return 0, 1
+        return np.zeros_like(a), np.ones_like(a)
 
 
 class AndFun(Fun):
 
     def _boolean(self, a, b):
-        return a and b
+        return np.logical_and(a, b)
 
     def _real(self, a, b):
         return a * b
 
     def _deriv(self, a, b):
-        return b, a
+        return np.array(b), np.array(a)
 
 
 class OrFun(Fun):
 
     def _boolean(self, a, b):
-        return a or b
+        return np.logical_or(a, b)
 
     def _real(self, a, b):
         return a + b - a*b
@@ -102,7 +104,7 @@ class OrFun(Fun):
 class XorFun(Fun):
 
     def _boolean(self, a, b):
-        return a != b
+        return np.logical_xor(a, b)
 
     def _real(self, a, b):
         return a + b - 2*a*b
@@ -116,38 +118,27 @@ class XorFun(Fun):
 class ImpABFun(Fun):
 
     def _boolean(self, a, b):
-        return not a or b
+        return np.logical_or(~a, b)
 
     def _real(self, a, b):
         return 1 - a + a * b
 
     def _deriv(self, a, b):
         deriv_a = -1 + b
-        deriv_b = a
+        deriv_b = np.array(a)
         return deriv_a, deriv_b
 
 
 class ImpBAFun(Fun):
 
     def _boolean(self, a, b):
-        return not b or a
+        return np.logical_or(~b, a)
 
     def _real(self, a, b):
         return 1 - b + a * b
 
     def _deriv(self, a, b):
-        deriv_a = b
+        deriv_a = np.array(b)
         deriv_b = -1 + a
         return deriv_a, deriv_b
 
-
-FUNCTIONS = [
-    TrueFun(), TrueFun(neg=True),
-    AFun(), AFun(neg=True),
-    BFun(), BFun(neg=True),
-    AndFun(), AndFun(neg=True),
-    OrFun(), OrFun(neg=True),
-    XorFun(), XorFun(neg=True),
-    ImpABFun(), ImpABFun(neg=True),
-    ImpBAFun(), ImpBAFun(neg=True),
-]
