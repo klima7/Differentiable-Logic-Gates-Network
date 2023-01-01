@@ -4,169 +4,154 @@ import numpy as np
 
 
 class LogicFun(ABC):
+    ARGS_COUNT = None
 
-    def __init__(self, neg=False):
+    def __init__(self, var_indexes, neg=False):
+        self.var_indexes = var_indexes
         self.neg = neg
 
-    def boolean(self, *args):
-        value = self._boolean(*args)
+    @property
+    def idx0(self):
+        return self.var_indexes[0]
+
+    @property
+    def idx1(self):
+        return self.var_indexes[1]
+
+    def boolean(self, inputs):
+        value = self._boolean(inputs)
         if self.neg:
             value = ~value
         return value
 
-    def real(self, *args):
-        value = self._real(*args)
+    def real(self, inputs):
+        value = self._real(inputs)
         if self.neg:
             value = 1 - value
         return value
 
-    def deriv(self, *args):
-        value = self._deriv(*args)
+    def deriv(self, inputs):
+        value = self._deriv(inputs)
         if self.neg:
             value = -value
         return value
 
     @abstractmethod
-    def _boolean(self, *args):
+    def _boolean(self, inputs):
         pass
 
     @abstractmethod
-    def _real(self, *args):
+    def _real(self, inputs):
         pass
 
     @abstractmethod
-    def _deriv(self, *args):
+    def _deriv(self, inputs):
         pass
 
 
-class NoArgLogicFun(LogicFun):
+class TrueFun(LogicFun):
+    ARGS_COUNT = 0
 
-    @abstractmethod
-    def _boolean(self):
-        pass
-
-    @abstractmethod
-    def _real(self):
-        pass
-
-    def _deriv(self, *args):
-        return None
-
-
-class OneArgLogicFun(LogicFun):
-
-    @abstractmethod
-    def _boolean(self, a):
-        pass
-
-    @abstractmethod
-    def _real(self, a):
-        pass
-
-    @abstractmethod
-    def _deriv(self, a):
-        pass
-
-
-class TwoArgLogicFun(LogicFun):
-
-    @abstractmethod
-    def _boolean(self, a, b):
-        pass
-
-    @abstractmethod
-    def _real(self, a, b):
-        pass
-
-    @abstractmethod
-    def _deriv(self, a, b):
-        pass
-
-
-class TrueFun(NoArgLogicFun):
-
-    def _boolean(self):
+    def _boolean(self, inputs):
         return True
 
-    def _real(self):
+    def _real(self, inputs):
         return 1
 
-
-class IdentityFun(OneArgLogicFun):
-
-    def _boolean(self, a):
-        return np.array(a)
-
-    def _real(self, a):
-        return np.array(a)
-
-    def _deriv(self, a):
-        return np.ones_like(a)
+    def _deriv(self, inputs):
+        return np.zeros_like(inputs)
 
 
-class AndFun(TwoArgLogicFun):
+class IdentityFun(LogicFun):
+    ARGS_COUNT = 1
 
-    def _boolean(self, a, b):
-        return np.logical_and(a, b)
+    def _boolean(self, inputs):
+        return inputs[self.idx0]
 
-    def _real(self, a, b):
-        return a * b
+    def _real(self, inputs):
+        return inputs[self.idx0]
 
-    def _deriv(self, a, b):
-        return np.array(b), np.array(a)
-
-
-class OrFun(TwoArgLogicFun):
-
-    def _boolean(self, a, b):
-        return np.logical_or(a, b)
-
-    def _real(self, a, b):
-        return a + b - a*b
-
-    def _deriv(self, a, b):
-        deriv_a = 1 - b
-        deriv_b = 1 - a
-        return deriv_a, deriv_b
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = 1
+        return deriv
 
 
-class XorFun(TwoArgLogicFun):
+class AndFun(LogicFun):
+    ARGS_COUNT = 2
 
-    def _boolean(self, a, b):
-        return np.logical_xor(a, b)
+    def _boolean(self, inputs):
+        return inputs[self.idx0] and inputs[self.idx1]
 
-    def _real(self, a, b):
-        return a + b - 2*a*b
+    def _real(self, inputs):
+        return inputs[self.idx0] * inputs[self.idx1]
 
-    def _deriv(self, a, b):
-        deriv_a = 1 - 2*b
-        deriv_b = 1 - 2*a
-        return deriv_a, deriv_b
-
-
-class ImpABFun(TwoArgLogicFun):
-
-    def _boolean(self, a, b):
-        return np.logical_or(~a, b)
-
-    def _real(self, a, b):
-        return 1 - a + a * b
-
-    def _deriv(self, a, b):
-        deriv_a = -1 + b
-        deriv_b = np.array(a)
-        return deriv_a, deriv_b
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = inputs[self.idx1]
+        deriv[self.idx1] = inputs[self.idx0]
+        return deriv
 
 
-class ImpBAFun(TwoArgLogicFun):
+class OrFun(LogicFun):
+    ARGS_COUNT = 2
 
-    def _boolean(self, a, b):
-        return np.logical_or(~b, a)
+    def _boolean(self, inputs):
+        return inputs[self.idx0] or inputs[self.idx1]
 
-    def _real(self, a, b):
-        return 1 - b + a * b
+    def _real(self, inputs):
+        return inputs[self.idx0] + inputs[self.idx1] - inputs[self.idx0]*inputs[self.idx1]
 
-    def _deriv(self, a, b):
-        deriv_a = np.array(b)
-        deriv_b = -1 + a
-        return deriv_a, deriv_b
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = 1 - inputs[self.idx1]
+        deriv[self.idx1] = 1 - inputs[self.idx0]
+        return deriv
+
+
+class XorFun(LogicFun):
+    ARGS_COUNT = 2
+
+    def _boolean(self, inputs):
+        return inputs[self.idx0] != inputs[self.idx1]
+
+    def _real(self, inputs):
+        return inputs[self.idx0] + inputs[self.idx1] - 2*inputs[self.idx0]*inputs[self.idx1]
+
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = 1 - 2*inputs[self.idx1]
+        deriv[self.idx1] = 1 - 2*inputs[self.idx0]
+        return deriv
+
+
+class ImpABFun(LogicFun):
+    ARGS_COUNT = 2
+
+    def _boolean(self, inputs):
+        return not(inputs[self.idx0]) or inputs[self.idx1]
+
+    def _real(self, inputs):
+        return 1 - inputs[self.idx0] + inputs[self.idx0] * inputs[self.idx1]
+
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = -1 + inputs[self.idx1]
+        deriv[self.idx1] = inputs[self.idx0]
+        return deriv
+
+
+class ImpBAFun(LogicFun):
+    ARGS_COUNT = 2
+
+    def _boolean(self, inputs):
+        return not(inputs[self.idx1]) or inputs[self.idx0]
+
+    def _real(self, inputs):
+        return 1 - inputs[self.idx1] + inputs[self.idx0] * inputs[self.idx1]
+
+    def _deriv(self, inputs):
+        deriv = np.zeros_like(inputs)
+        deriv[self.idx0] = inputs[self.idx1]
+        deriv[self.idx1] = -1 + inputs[self.idx0]
+        return deriv
