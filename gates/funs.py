@@ -63,18 +63,6 @@ class AFun(Fun):
         return np.ones_like(a), np.zeros_like(a)
 
 
-class BFun(Fun):
-
-    def _boolean(self, a, b):
-        return np.array(b)
-
-    def _real(self, a, b):
-        return np.array(b)
-
-    def _deriv(self, a, b):
-        return np.zeros_like(a), np.ones_like(a)
-
-
 class AndFun(Fun):
 
     def _boolean(self, a, b):
@@ -127,18 +115,3 @@ class ImpABFun(Fun):
         deriv_a = -1 + b
         deriv_b = np.array(a)
         return deriv_a, deriv_b
-
-
-class ImpBAFun(Fun):
-
-    def _boolean(self, a, b):
-        return np.logical_or(~b, a)
-
-    def _real(self, a, b):
-        return 1 - b + a * b
-
-    def _deriv(self, a, b):
-        deriv_a = np.array(b)
-        deriv_b = -1 + a
-        return deriv_a, deriv_b
-
