@@ -1,2 +1,6 @@
 numpy
 tqdm
+pandas
+tensorflow
+scikit-learn
+einops
