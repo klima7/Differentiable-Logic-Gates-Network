@@ -51,7 +51,7 @@ class Network:
 
     def __learn_epoch(self, inputs, outputs, learning_rate, epoch_no):
         shuffled_inputs, shuffled_outputs = self.__shuffle(inputs, outputs)
-        iterator = tqdm(zip(shuffled_inputs, shuffled_outputs), total=len(inputs), desc=f'Epoch {epoch_no:.3}')
+        iterator = tqdm(zip(shuffled_inputs, shuffled_outputs), total=len(inputs), desc=f'Epoch {epoch_no:3}')
         for input, output in iterator:
             self.__learn_single(input, output, learning_rate)
 
