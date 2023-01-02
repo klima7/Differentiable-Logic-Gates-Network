@@ -21,7 +21,7 @@ class LogicFun(ABC):
     def boolean(self, inputs):
         value = self._boolean(inputs)
         if self.neg:
-            value = ~value
+            value = not value
         return value
 
     def real(self, inputs):

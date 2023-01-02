@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from layer import Layer
+from .layer import Layer
 
 
 class Network:
@@ -11,16 +11,31 @@ class Network:
         self.layers = self.__create_layers(input_size, layers_sizes, connections_rate)
 
     def fit(self, inputs, outputs, epochs=1, learning_rate=0.01):
+        inputs, outputs = inputs.astype(np.float64), outputs.astype(np.float64)
         for epoch_no in range(epochs):
-            self.__learn_epoch(inputs, outputs, learning_rate, epoch_no)
+            self.__learn_epoch(inputs, outputs, learning_rate, epoch_no+1)
 
     def predict_boolean(self, inputs):
+        inputs = inputs > 0.5
         outputs = [self.__propagate_boolean(input) for input in inputs]
         return np.array(outputs)
 
     def predict_real(self, inputs):
+        inputs = inputs.astype(np.float64)
         outputs = [self.__propagate_real(input) for input in inputs]
         return np.array(outputs)
+
+    def evaluate_boolean(self, inputs, outputs):
+        predictions = self.predict_boolean(inputs)
+        loss = self.__get_loss(predictions, outputs)
+        accuracy = self.__get_accuracy(predictions, outputs)
+        return loss, accuracy
+
+    def evaluate_real(self, inputs, outputs):
+        predictions = self.predict_real(inputs)
+        loss = self.__get_loss(predictions, outputs)
+        accuracy = self.__get_accuracy(predictions, outputs)
+        return loss, accuracy
 
     def __propagate_boolean(self, input):
         current_input = input
@@ -36,7 +51,7 @@ class Network:
 
     def __learn_epoch(self, inputs, outputs, learning_rate, epoch_no):
         shuffled_inputs, shuffled_outputs = self.__shuffle(inputs, outputs)
-        iterator = tqdm(zip(shuffled_inputs, shuffled_outputs), total=len(inputs), desc=f'Epoch {epoch_no:.3f}')
+        iterator = tqdm(zip(shuffled_inputs, shuffled_outputs), total=len(inputs), desc=f'Epoch {epoch_no:.3}')
         for input, output in iterator:
             self.__learn_single(input, output, learning_rate)
 
@@ -68,5 +83,19 @@ class Network:
         return layers
 
     @staticmethod
+    def __get_accuracy(prediction, target):
+        prediction, target = prediction > 0.5, target > 0.5
+        correct_count = np.sum(np.all(prediction == target, axis=1))
+        total_count = len(target)
+        return correct_count / total_count if total_count != 0 else 0
+
+    @staticmethod
+    def __get_loss(prediction, target):
+        prediction, target = prediction.astype(np.float64), target.astype(np.float64)
+        partial_losses = np.mean(np.power(target - prediction, 2), axis=1)
+        mean_loss = np.mean(partial_losses)
+        return mean_loss
+
+    @staticmethod
     def __get_loss_deriv(prediction, target):
-        return 2 * (prediction - target) / prediction.size
+        return 2 * (prediction - target)

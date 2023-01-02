@@ -1,6 +1,6 @@
 import numpy as np
 
-from gate import Gate
+from .gate import Gate
 
 
 class Layer:
@@ -18,4 +18,10 @@ class Layer:
         return np.array([gate.propagate_real(input) for gate in self.gates])
 
     def backpropagate(self, gradient, learning_rate):
-        return np.array([gate.backpropagate(gradient, learning_rate) for gate in self.gates])
+        assert len(self.gates) == len(gradient)
+
+        next_gradients = np.zeros((self.size, self.input_size), dtype=np.float64)
+        for i, (gate, gradient_elem) in enumerate(zip(self.gates, gradient)):
+            next_gradients[i, :] = gate.backpropagate(gradient_elem, learning_rate)
+
+        return np.sum(next_gradients, axis=0)

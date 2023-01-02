@@ -3,7 +3,7 @@ from itertools import combinations
 
 import numpy as np
 
-import funs
+from . import funs
 
 
 class Gate:
@@ -38,8 +38,8 @@ class Gate:
         return next_gradient
 
     def __get_next_gradient(self, gradient):
-        derivs = np.array([fun.deriv(self.__input) for fun in self.funs])
-        derivs = derivs @ self.__softmax(self.weights)
+        derivs = np.column_stack([fun.deriv(self.__input) for fun in self.funs])
+        derivs = derivs * self.__softmax(self.weights)
         derivs = np.sum(derivs, axis=1)
         return gradient * derivs
 
