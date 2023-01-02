@@ -6,9 +6,9 @@ from layer import Layer
 
 class Network:
 
-    def __init__(self, input_size, layers_sizes):
+    def __init__(self, input_size, layers_sizes, connections_rate):
         self.input_size = input_size
-        self.layers = self.__create_layers(input_size, layers_sizes)
+        self.layers = self.__create_layers(input_size, layers_sizes, connections_rate)
 
     def fit(self, inputs, outputs, epochs=1, learning_rate=0.01):
         for epoch_no in range(epochs):
@@ -59,11 +59,11 @@ class Network:
         return shuffled_inputs, shuffled_outputs
 
     @staticmethod
-    def __create_layers(input_size, layers_sizes):
+    def __create_layers(input_size, layers_sizes, connections_rate):
         layers = []
         all_sizes = [input_size, *layers_sizes]
         for input_size, gates_count in zip(all_sizes, all_sizes[1:]):
-            layer = Layer(size=gates_count, input_size=input_size)
+            layer = Layer(gates_count, input_size, connections_rate)
             layers.append(layer)
         return layers
 
