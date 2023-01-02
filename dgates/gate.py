@@ -1,3 +1,4 @@
+import math
 import random
 from itertools import combinations
 
@@ -12,9 +13,9 @@ class Gate:
 
     def __init__(self, input_size, connections_rate):
         self.input_size = input_size
-        self.connections = connections_rate
+        self.connections_rate = connections_rate
 
-        self.funs = self.__create_desired_functions_variants()
+        self.funs = self.__create_all_functions_variants()
         self.weights = np.random.randn(len(self.funs))
 
         self.__input = None
@@ -56,7 +57,7 @@ class Gate:
 
     def __create_desired_functions_variants(self):
         all_variants = self.__create_all_functions_variants()
-        desired_count = self.connections if isinstance(self.connections, int) else int(self.connections * len(all_variants))
+        desired_count = self.connections_rate if isinstance(self.connections_rate, int) else int(self.connections_rate * len(all_variants))
         return random.choices(all_variants, k=desired_count)
 
     def __create_all_functions_variants(self):
@@ -68,5 +69,12 @@ class Gate:
 
     def __create_function_variants(self, func_cls):
         vars_combinations = list(combinations(range(self.input_size), func_cls.ARGS_COUNT))
+
+        if isinstance(self.connections_rate, int):
+            desired_count = min(self.connections_rate, len(vars_combinations))
+        else:
+            desired_count = math.ceil(self.connections_rate * len(vars_combinations))
+
+        vars_combinations = random.sample(vars_combinations, k=desired_count)
         funcs = [func_cls(vars_combination, neg) for vars_combination in vars_combinations for neg in [True, False]]
         return funcs
